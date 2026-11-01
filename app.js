@@ -8,10 +8,10 @@ const MIN = 60e3, HOUR = 60 * MIN, DAY = 24 * HOUR;
 
 /* ---------- 基础配置 ---------- */
 const TYPES = {
-  express: { name: '代取快递', icon: '📦', base: 3, desc: '驿站取件送到宿舍', from: '北门菜鸟驿站' },
-  buy:     { name: '代买物品', icon: '🛒', base: 4, desc: '食堂、超市带东西', from: '学府超市' },
-  seat:    { name: '代占座位', icon: '💺', base: 3, desc: '图书馆、自习室占座', from: '图书馆' },
-  other:   { name: '其他互助', icon: '🤝', base: 5, desc: '送文件、取打印等', from: '打印店' },
+  express: { name: '代取快递', icon: 'package', base: 3, desc: '驿站取件送到宿舍', from: '北门菜鸟驿站' },
+  buy:     { name: '代买物品', icon: 'shopping-cart', base: 4, desc: '食堂、超市带东西', from: '学府超市' },
+  seat:    { name: '代占座位', icon: 'armchair', base: 3, desc: '图书馆、自习室占座', from: '图书馆' },
+  other:   { name: '其他互助', icon: 'handshake', base: 5, desc: '送文件、取打印等', from: '打印店' },
 };
 
 // 主题色取自小红书笔记「校园美学配色｜适配校园主题设计的色卡」（笔格PPT）
@@ -203,7 +203,9 @@ $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeM
 const AV = { u1: 'var(--b600)', u2: 'var(--b800)', u3: 'var(--b500)', u4: '#64748B' };
 const avatar = (u, cls = '') => `<span class="avatar ${cls}" style="background:${AV[u.id] || 'var(--b600)'}">${esc(u.name[0])}</span>`;
 const lvBadge = c => { const l = level(c); return `<span class="lv" style="background:${l.c}">${l.name} ${c}</span>`; };
-const ticon = type => `<span class="ticon">${TYPES[type].icon}</span>`;
+const ticon = type => `<span class="ticon">${ic(TYPES[type].icon)}</span>`;
+const ic = (n, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${window.ICONS[n] || ''}</svg>`;
+const stars = n => [1, 2, 3, 4, 5].map(i => ic('star', i <= n ? 'star-on' : 'star-off')).join('');
 const statusTag = s => `<span class="tag ${STATUS[s].cls}">${STATUS[s].name}</span>`;
 
 function applyTheme(k) {
@@ -234,7 +236,7 @@ const go = h => { if (location.hash === h) route(); else location.hash = h; };
 function topbar(title, back) {
   const u = me(), n = S.notices.filter(x => x.to === S.me && !x.read).length;
   $('#topbar').innerHTML = `${back ? `<a class="back" href="${back}" aria-label="返回">‹</a>` : ''}<h1>${title}</h1>
-    <a class="bell" href="#/notices" aria-label="消息">🔔${n ? `<span class="badge">${n}</span>` : ''}</a>
+    <a class="bell" href="#/notices" aria-label="消息">${ic('bell')}${n ? `<span class="badge">${n}</span>` : ''}</a>
     <span class="chip-credit" data-act="switchUser" title="切换演示身份">${avatar(u)}${esc(u.name)} · ${lvBadge(u.credit)}</span>`;
 }
 function todoCount() {
@@ -244,11 +246,11 @@ function todoCount() {
 function renderTabbar(page) {
   const n = todoCount();
   const docPages = ['docs', 'design', 'prd', 'guide', 'admin'];
-  const it = (h, ic, name, key, cls = '') => `<a href="#/${h}" class="${cls} ${page === key || (key === 'docs' && docPages.includes(page)) ? 'on' : ''}"><span class="ic">${ic}</span>${name}${key === 'orders' && n ? `<span class="badge">${n}</span>` : ''}</a>`;
-  $('#tabbar').innerHTML = it('hall', '🏠', '任务大厅', 'hall') + it('docs', '📄', 'PRD·手册', 'docs') + it('post', '＋', '发布', 'post', 'post') + it('orders', '📋', '我的订单', 'orders') + it('me', '👤', '信用中心', 'me');
+  const it = (h, icn, name, key, cls = '') => `<a href="#/${h}" class="${cls} ${page === key || (key === 'docs' && docPages.includes(page)) ? 'on' : ''}"><span class="ic">${ic(icn)}</span>${name}${key === 'orders' && n ? `<span class="badge">${n}</span>` : ''}</a>`;
+  $('#tabbar').innerHTML = it('hall', 'house', '任务大厅', 'hall') + it('docs', 'file-text', 'PRD·手册', 'docs') + it('post', 'plus', '发布', 'post', 'post') + it('orders', 'clipboard-list', '我的订单', 'orders') + it('me', 'user', '信用中心', 'me');
 }
 function onboarding() {
-  openModal(`<h3>👋 欢迎来到顺路帮</h3>
+  openModal(`<h3>${ic('sparkles', 'h')}欢迎来到顺路帮</h3>
     <p class="muted mb8">这是「校园跑腿互助平台」的可交互原型，数据只保存在你的浏览器里，可以随便点。</p>
     <ol class="ob"><li><b>以「林同学」身份进入</b>：在大厅接单、发布任务、看订单。</li>
     <li><b>右上角头像可切换身份</b>：换成陈同学体验另一端；王同学未认证、赵同学信用低，可看到限制。</li>
@@ -302,23 +304,23 @@ function Hall() {
         <div><b>${S.tasks.filter(t => t.status === 'done').length}</b><span>已完成</span></div>
         <div><b>${avgAcceptMin()} 分钟</b><span>平均接单</span></div>
       </div>
-      <div class="route">🧭 我正要去
+      <div class="route">${ic('compass')} 我正要去
         <select data-change="via" aria-label="顺路目的地"><option value="">— 选个地方，看顺路单 —</option>${PLACE_NAMES.map(p => `<option ${hall.via === p ? 'selected' : ''}>${p}</option>`).join('')}</select>
       </div>
     </div>
-    <a class="docbar" href="#/docs">📄 面试官请看：产品需求文档 PRD · 操作手册 · 运营后台 <span>→</span></a>
+    <a class="docbar" href="#/docs">${ic('file-text')} 面试官请看：产品需求文档 PRD · 操作手册 · 运营后台 <span>${ic('arrow-right')}</span></a>
     <div class="chips">
-      ${[['all', '全部'], ...Object.entries(TYPES).map(([k, v]) => [k, v.icon + ' ' + v.name])].map(([k, n]) => `<button class="chip ${hall.type === k ? 'on' : ''}" data-act="hallType" data-v="${k}">${n}</button>`).join('')}
+      ${[['all', '全部'], ...Object.entries(TYPES).map(([k, v]) => [k, ic(v.icon, 's') + v.name])].map(([k, n]) => `<button class="chip ${hall.type === k ? 'on' : ''}" data-act="hallType" data-v="${k}">${n}</button>`).join('')}
     </div>
     <div class="toolbar">
-      <label class="search">🔍<input placeholder="搜地点、物品…" value="${esc(hall.q)}" data-input="q" aria-label="搜索任务"></label>
+      <label class="search">${ic('search')}<input placeholder="搜地点、物品…" value="${esc(hall.q)}" data-input="q" aria-label="搜索任务"></label>
       <select data-change="sort" aria-label="排序">
         ${[['smart', '智能排序'], ['new', '最新发布'], ['reward', '赏金最高'], ['near', '离我最近'], ['urgent', '即将截止']].map(([k, n]) => `<option value="${k}" ${hall.sort === k ? 'selected' : ''}>${n}</option>`).join('')}
       </select>
     </div>
     ${hall.via ? `<div class="alert info">顺路模式：从 ${esc(u.dorm)} 去 <b>${esc(hall.via)}</b>，为你筛出 ${list.length} 个顺路单 <a href="javascript:" data-act="clearVia">退出</a></div>` : ''}
-    <div id="list">${list.length ? list.map(taskCard).join('') : `<div class="empty"><div class="e">🍃</div>暂时没有符合条件的任务<br><a href="#/post">发布一个需求 →</a></div>`}</div>
-    ${board.length ? `<div class="card"><h3>🏆 本周跑腿榜</h3>${board.map((x, i) => `<div class="row mb8"><b style="width:18px">${i + 1}</b>${avatar(x.u)}<span class="grow">${esc(x.u.name)}</span>${lvBadge(x.u.credit)}<span class="muted small">完成 ${x.n} 单</span></div>`).join('')}</div>` : ''}`;
+    <div id="list">${list.length ? list.map(taskCard).join('') : `<div class="empty"><div class="e">${ic('inbox')}</div>暂时没有符合条件的任务<br><a href="#/post">发布一个需求 →</a></div>`}</div>
+    ${board.length ? `<div class="card"><h3>${ic('trophy', 'h')}本周跑腿榜</h3>${board.map((x, i) => `<div class="row mb8"><b style="width:18px">${i + 1}</b>${avatar(x.u)}<span class="grow">${esc(x.u.name)}</span>${lvBadge(x.u.credit)}<span class="muted small">完成 ${x.n} 单</span></div>`).join('')}</div>` : ''}`;
 }
 function taskCard(t) {
   const p = user(t.posterId), ty = TYPES[t.type];
@@ -332,7 +334,7 @@ function taskCard(t) {
       <div class="reward"><small>¥</small>${money(t.reward)}</div>
     </div>
     <div class="path"><span class="dot"></span>${esc(t.from)}<span class="arrow">→</span><span class="dot end"></span>${esc(t.to)}<span class="muted small" style="margin-left:auto">${t.type === 'seat' ? '' : fmtDist(dist(t.from, t.to))}</span></div>
-    <div class="foot">${avatar(p)}<span>${esc(p.name)}</span>${lvBadge(p.credit)}<span style="margin-left:auto;${late ? 'color:var(--bad)' : ''}">⏱ ${left(t.deadline)}</span><span>· 距你 ${fmtDist(dist(me().dorm, t.from))}</span></div>
+    <div class="foot">${avatar(p)}<span>${esc(p.name)}</span>${lvBadge(p.credit)}<span style="margin-left:auto;${late ? 'color:var(--bad)' : ''}">${ic('clock', 's')}${left(t.deadline)}</span><span>· 距你 ${fmtDist(dist(me().dorm, t.from))}</span></div>
   </a>`;
 }
 
@@ -340,7 +342,7 @@ function taskCard(t) {
 function reviewsVisible(t) { return (t.reviews.poster && t.reviews.runner) || (t.doneAt && now() - t.doneAt > RULES.reviewOpen); }
 function Detail(id) {
   const t = task(id);
-  if (!t) { topbar('任务不存在', '#/hall'); view.innerHTML = '<div class="empty"><div class="e">🔎</div>任务不存在或已被删除</div>'; return; }
+  if (!t) { topbar('任务不存在', '#/hall'); view.innerHTML = '<div class="empty"><div class="e">'+ic('search-x')+'</div>任务不存在或已被删除</div>'; return; }
   topbar('任务详情', 'javascript:history.back()');
   const p = user(t.posterId), r = t.runnerId && user(t.runnerId);
   const isP = t.posterId === S.me, isR = t.runnerId === S.me, involved = isP || isR;
@@ -350,16 +352,16 @@ function Detail(id) {
 
   let priv;
   if (involved) {
-    priv = `<div class="secret">🔓 <b>隐私信息（仅双方可见）</b><dl class="kv mt8">
+    priv = `<div class="secret">${ic('lock-open', 's')}<b>隐私信息（仅双方可见）</b><dl class="kv mt8">
       ${t.priv.code ? `<dt>取件码</dt><dd>${esc(t.priv.code)}</dd>` : ''}
       ${t.priv.phone ? `<dt>联系方式</dt><dd>${esc(t.priv.phone)}（平台虚拟号转接）</dd>` : ''}
       ${!t.priv.code && !t.priv.phone ? '<dt>—</dt><dd>发布者未填写额外隐私信息</dd>' : ''}</dl></div>`;
-  } else priv = `<div class="locked">🔒 取件码、联系方式等隐私信息<br>接单后仅对你可见</div>`;
+  } else priv = `<div class="locked">${ic('lock')}<br>取件码、联系方式等隐私信息<br>接单后仅对你可见</div>`;
 
   const myRole = isP ? 'poster' : isR ? 'runner' : null, other = isP ? 'runner' : 'poster';
   let reviewHtml = '';
   if (Object.keys(t.reviews).length) {
-    if (reviewsVisible(t)) reviewHtml = ['poster', 'runner'].filter(k => t.reviews[k]).map(k => { const v = t.reviews[k]; return `<div class="mb8"><b>${k === 'poster' ? '发布者' : '跑腿者'}评价：</b><span class="star-txt">${'★'.repeat(v.stars)}${'☆'.repeat(5 - v.stars)}</span> ${v.tags.map(x => `<span class="tag">${esc(x)}</span>`).join(' ')}<div class="muted small">${esc(v.text)}</div></div>`; }).join('');
+    if (reviewsVisible(t)) reviewHtml = ['poster', 'runner'].filter(k => t.reviews[k]).map(k => { const v = t.reviews[k]; return `<div class="mb8"><b>${k === 'poster' ? '发布者' : '跑腿者'}评价：</b><span class="star-txt">${stars(v.stars)}</span> ${v.tags.map(x => `<span class="tag">${esc(x)}</span>`).join(' ')}<div class="muted small">${esc(v.text)}</div></div>`; }).join('');
     else if (myRole && t.reviews[myRole]) reviewHtml = `<p class="muted small">你已评价。双方都评价后（或完成 72 小时后）同时公开。</p>`;
     else if (myRole && t.reviews[other]) reviewHtml = `<p class="muted small">对方已评价。你评价后即可看到对方的评价。</p>`;
     else reviewHtml = `<p class="muted small">评价将在双方都提交后公开。</p>`;
@@ -370,7 +372,7 @@ function Detail(id) {
       <div class="row between"><span>${statusTag(t.status)} ${t.disputed ? '<span class="tag bad">申诉处理中</span>' : ''}</span><span class="muted small">发布于 ${ago(t.createdAt)}</span></div>
       <div class="head row mt12" style="align-items:flex-start">${ticon(t.type)}<div class="grow"><div style="font-size:17px;font-weight:600">${esc(t.title)}</div><span class="tag mt8">${ty.name}</span> ${t.size === '大件' ? '<span class="tag warn">大件</span>' : ''}</div>
         <div class="reward"><small>¥</small>${money(t.reward)}</div></div>
-      ${stepIdx >= 0 ? `<div class="steps mt12">${steps.map((s, i) => `<div class="s ${i <= stepIdx ? 'on' : ''}"><i>${i <= stepIdx ? '✓' : i + 1}</i>${s}</div>`).join('')}</div>` : ''}
+      ${stepIdx >= 0 ? `<div class="steps mt12">${steps.map((s, i) => `<div class="s ${i <= stepIdx ? 'on' : ''}"><i>${i <= stepIdx ? ic('check') : i + 1}</i>${s}</div>`).join('')}</div>` : ''}
     </div>
     <div class="card"><h3>任务信息</h3><dl class="kv">
       <dt>${t.type === 'seat' ? '占座地点' : '取货地点'}</dt><dd>${esc(t.from)}</dd>
@@ -391,13 +393,13 @@ function Detail(id) {
       ${['accepted', 'delivered'].includes(t.status) ? `<form class="inline-form" data-submit="msg" data-id="${t.id}"><input name="x" placeholder="说点什么…" maxlength="100" autocomplete="off" aria-label="消息"><button class="btn sm">发送</button></form>` : ''}</div>` : ''}
     ${reviewHtml ? `<div class="card"><h3>评价</h3>${reviewHtml}</div>` : ''}
     <div class="card"><h3>进度记录</h3><ul class="timeline">${[...t.timeline].reverse().map(x => `<li><b>${esc(x.x)}</b> · ${ago(x.t)}</li>`).join('') || '<li>暂无</li>'}</ul></div>
-    ${!isP && t.status === 'open' ? `<p class="center small"><a href="javascript:" data-act="report" data-id="${t.id}">⚠️ 举报这个任务</a></p>` : ''}
+    ${!isP && t.status === 'open' ? `<p class="center small"><a href="javascript:" data-act="report" data-id="${t.id}">${ic('flag', 's')}举报这个任务</a></p>` : ''}
     <div class="sticky-actions"><div class="actions">${detailActions(t, isP, isR)}</div></div>`;
 }
 function detailActions(t, isP, isR) {
   const id = t.id;
   const b = (act, txt, cls = '') => `<button class="btn ${cls}" data-act="${act}" data-id="${id}">${txt}</button>`;
-  const rv = role => !t.reviews[role] ? b('review', '⭐ 评价对方') : '';
+  const rv = role => !t.reviews[role] ? b('review', ic('star', 's') + '评价对方') : '';
   const again = isP ? b('again', '再来一单', 'ghost') : '';
   switch (t.status) {
     case 'open':
@@ -454,7 +456,7 @@ const actions = {
     openModal(`<h3>确认接单</h3>
       <div class="alert info">接单后你将看到取件码与联系方式。请在 <b>${clock(t.deadline)}</b> 前送达。</div>
       ${t.advance ? `<div class="alert warn">本单需要你先垫付 <b>¥${money(t.advance)}</b>，完成后与赏金一起返还。请保留小票。</div>` : ''}
-      <ul class="privs"><li>✅ 按时完成：信用 +2，赏金 ¥${money(t.reward)}</li><li>⚠️ 超时完成：信用 -2</li><li>❌ 接单后放弃：信用 -3</li></ul>
+      <ul class="privs"><li>${ic('circle-check', 'ok')}按时完成：信用 +2，赏金 ¥${money(t.reward)}</li><li>${ic('triangle-alert', 'warn')}超时完成：信用 -2</li><li>${ic('circle-x', 'bad')}接单后放弃：信用 -3</li></ul>
       <div class="actions mt12"><button class="btn line" data-act="close">再想想</button><button class="btn" data-act="doAccept" data-id="${t.id}">确认接单</button></div>`);
   },
   doAccept(d) {
@@ -481,7 +483,7 @@ const actions = {
   leave(d) {
     openModal(`<h3>无接触交付</h3><p class="muted small mb8">对方不方便见面时，把东西放到约定位置并拍照留证。对方确认或 24 小时后自动完成。</p>
       <form data-submit="leave" data-id="${d.id}"><div class="field"><label>放置位置</label><input name="where" value="${esc(task(d.id).to)}一楼取物架" required></div>
-      <div class="field"><label>照片凭证</label><div class="locked">📷 已拍照（演示中以占位图代替）</div></div>
+      <div class="field"><label>照片凭证</label><div class="locked">${ic('camera')}<br>已拍照（演示中以占位图代替）</div></div>
       <div class="actions"><button type="button" class="btn line" data-act="close">取消</button><button class="btn">提交送达</button></div></form>`);
   },
   abandon(d) {
@@ -534,7 +536,7 @@ const actions = {
     const other = user(isP ? t.runnerId : t.posterId);
     const tags = isP ? ['准时送达', '态度友好', '物品完好', '沟通顺畅'] : ['描述清楚', '确认爽快', '好沟通', '地点准确'];
     openModal(`<h3>评价 ${esc(other.name)}</h3>
-      <form data-submit="review" data-id="${t.id}"><div class="stars">${[1, 2, 3, 4, 5].map(i => `<span data-act="star" data-v="${i}" class="on" role="button" aria-label="${i} 星">★</span>`).join('')}</div><input type="hidden" name="stars" value="5">
+      <form data-submit="review" data-id="${t.id}"><div class="stars">${[1, 2, 3, 4, 5].map(i => `<span data-act="star" data-v="${i}" class="on" role="button" aria-label="${i} 星">${ic('star')}</span>`).join('')}</div><input type="hidden" name="stars" value="5">
       <div class="chips wrap">${tags.map(x => `<label class="chip"><input type="checkbox" name="tag" value="${x}" hidden>${x}</label>`).join('')}</div>
       <div class="field"><textarea name="text" placeholder="说说这次体验（选填）" maxlength="80" aria-label="评价内容"></textarea></div>
       <p class="hint mb8">4–5 星：对方信用 +1；1–2 星：对方信用 -3。双盲互评：双方都提交后（或 72 小时后）同时公开。</p>
@@ -551,7 +553,7 @@ const actions = {
     openModal(`<h3>校园实名认证</h3><p class="muted small mb8">只对本校在读学生开放。认证信息仅用于身份核验，不对其他同学展示。</p>
       <form data-submit="verify"><div class="field"><label>学号</label><input name="sid" required pattern="\\d{8,12}" placeholder="8–12 位数字" inputmode="numeric"></div>
       <div class="field"><label>校园邮箱 <em>接收验证码</em></label><input name="mail" type="email" required placeholder="学号@stu.xxx.edu.cn"></div>
-      <div class="field"><label>学生证照片</label><div class="locked">📷 演示环境：点击提交即视为上传成功</div></div>
+      <div class="field"><label>学生证照片</label><div class="locked">${ic('camera')}<br>演示环境：点击提交即视为上传成功</div></div>
       <div class="actions"><button type="button" class="btn line" data-act="close">取消</button><button class="btn">提交认证</button></div></form>`);
   },
   recharge() { me().balance += 50; save(); toast('演示充值 ¥50 成功'); route(); },
@@ -628,13 +630,13 @@ function Post() {
         ${d.type === 'express' || d.type === 'buy' ? `<div class="field"><label for="f-size">物品大小</label><select id="f-size" name="size"><option ${d.size === '小件' ? 'selected' : ''}>小件</option><option ${d.size === '大件' ? 'selected' : ''}>大件</option></select></div>` : ''}
       </div>
       ${d.type === 'buy' ? `<div class="field"><label for="f-adv">预计垫付金额 <em>跑腿者先付，完成后返还；上限 ¥500</em></label><input id="f-adv" name="advance" type="number" min="0" max="500" step="0.5" value="${d.advance || ''}" placeholder="0">${d.advance > RULES.bigAdvance ? `<div class="hint" style="color:var(--warn)">垫付超过 ¥${RULES.bigAdvance}，只有信用「可靠」及以上的同学能接单</div>` : ''}</div>` : ''}
-      ${d.type === 'express' ? `<div class="field"><label for="f-code">取件码 <em>🔒 接单后仅对跑腿者可见</em></label><input id="f-code" name="code" value="${esc(d.code)}" placeholder="例：3-2-1187"></div>` : ''}
-      <div class="field"><label for="f-phone">联系方式 <em>🔒 平台虚拟号转接，不暴露真实号码</em></label><input id="f-phone" name="phone" value="${esc(d.phone)}" placeholder="例：尾号 6623"></div>
+      ${d.type === 'express' ? `<div class="field"><label for="f-code">取件码 <em>${ic('lock', 's')}接单后仅对跑腿者可见</em></label><input id="f-code" name="code" value="${esc(d.code)}" placeholder="例：3-2-1187"></div>` : ''}
+      <div class="field"><label for="f-phone">联系方式 <em>${ic('lock', 's')}平台虚拟号转接，不暴露真实号码</em></label><input id="f-phone" name="phone" value="${esc(d.phone)}" placeholder="例：尾号 6623"></div>
       <div class="field"><label for="f-note">备注</label><textarea id="f-note" name="note" maxlength="120" placeholder="${d.type === 'seat' ? '占座请遵守场馆规定，不可长时间占用；建议到场后再交接' : '口味、楼层、放置位置等'}">${esc(d.note)}</textarea></div>
-      ${d.type === 'seat' ? `<div class="alert info small">📌 占座规则：只占 1 个位、只在开放区域、超过 30 分钟未到场请主动释放，尊重其他同学。</div>` : ''}
+      ${d.type === 'seat' ? `<div class="alert info small">${ic('map-pin', 's')}占座规则：只占 1 个位、只在开放区域、超过 30 分钟未到场请主动释放，尊重其他同学。</div>` : ''}
       <div class="field"><label for="f-reward">赏金</label>
         <div class="stepper"><button type="button" data-act="rstep" data-v="-1" aria-label="减 1 元">−</button><input id="f-reward" name="reward" type="number" min="1" max="99" value="${d.reward}" style="width:80px"><button type="button" data-act="rstep" data-v="1" aria-label="加 1 元">＋</button>
-          <span class="small muted grow">建议 ¥${sug} ${d.reward !== sug ? `<a href="javascript:" data-act="useSuggest">使用</a>` : '✓'}</span></div>
+          <span class="small muted grow">建议 ¥${sug} ${d.reward !== sug ? `<a href="javascript:" data-act="useSuggest">使用</a>` : ic('check', 's')}</span></div>
         <div class="hint">按类型、距离（${d.type === 'seat' ? '—' : fmtDist(dist(d.from, d.to))}）、大小和紧急程度估算。赏金越合理，接单越快。</div>
       </div>
       <div id="banned">${bannedAlert(d.title + d.note)}</div>
@@ -654,7 +656,7 @@ function readDraft(form) {
   if (f.has('reward')) postDraft.reward = Math.max(1, Math.min(99, Math.round(+f.get('reward') || 1)));
 }
 const bannedHit = s => BANNED.find(w => s.includes(w));
-const bannedAlert = s => { const w = bannedHit(s); return w ? `<div class="alert bad">⛔ 检测到违规内容「${esc(w)}」：平台不支持代课、代考、代签到等违反校规的任务。</div>` : ''; };
+const bannedAlert = s => { const w = bannedHit(s); return w ? `<div class="alert bad">${ic('ban', 's')}检测到违规内容「${esc(w)}」：平台不支持代课、代考、代签到等违反校规的任务。</div>` : ''; };
 
 /* ---------- 我的订单 ---------- */
 let ordersTab = 'run';
@@ -666,8 +668,8 @@ function Orders() {
     <div class="chips"><button class="chip ${ordersTab === 'run' ? 'on' : ''}" data-act="ordersTab" data-v="run">我接的单 (${mineOf('run').length})</button><button class="chip ${ordersTab === 'post' ? 'on' : ''}" data-act="ordersTab" data-v="post">我发布的 (${mineOf('post').length})</button></div>
     ${list.length ? list.map(t => {
       const h = hint(t);
-      return taskCard(t).replace(/<\/a>\s*$/, h ? `<div class="alert ${h[0]} mt8" style="margin-bottom:0">👉 ${h[1]}</div></a>` : '</a>');
-    }).join('') : `<div class="empty"><div class="e">🗂</div>${ordersTab === 'run' ? '还没有接过单<br><a href="#/hall">去大厅看看 →</a>' : '还没有发布过任务<br><a href="#/post">发布第一个 →</a>'}</div>`}`;
+      return taskCard(t).replace(/<\/a>\s*$/, h ? `<div class="alert ${h[0]} mt8" style="margin-bottom:0">${ic('arrow-right', 's')}${h[1]}</div></a>` : '</a>');
+    }).join('') : `<div class="empty"><div class="e">${ic('folder-open')}</div>${ordersTab === 'run' ? '还没有接过单<br><a href="#/hall">去大厅看看 →</a>' : '还没有发布过任务<br><a href="#/post">发布第一个 →</a>'}</div>`}`;
 }
 function order(t) { return { accepted: 0, delivered: 1, open: 2, done: 3 }[t.status] ?? 4; }
 function hint(t) {
@@ -687,7 +689,7 @@ function Notices() {
   const list = S.notices.filter(n => n.to === S.me);
   view.innerHTML = `${list.some(n => !n.read) ? `<div class="row between mb8"><span class="muted small">${list.filter(n => !n.read).length} 条未读</span><a href="javascript:" data-act="readAll" class="small">全部已读</a></div>` : ''}
     ${list.length ? `<div class="card" style="padding:4px 14px">${list.map(n => `<div class="notice ${n.read ? '' : 'unread'}" data-act="openNotice" data-id="${n.id}" data-task="${n.taskId}"><div>${esc(n.x)}</div><div class="small muted">${ago(n.t)}</div></div>`).join('')}</div>`
-      : '<div class="empty"><div class="e">📭</div>暂无消息</div>'}`;
+      : `<div class="empty"><div class="e">${ic('inbox')}</div>暂无消息</div>`}`;
 }
 
 /* ---------- 信用中心 ---------- */
@@ -708,7 +710,7 @@ function Me() {
     [u.credit >= 180, '金牌跑腿标识 + 每月平台补贴（≥180）'],
   ];
   view.innerHTML = `
-    <div class="card"><div class="profile">${avatar(u, 'lg')}<div class="grow"><div style="font-size:17px;font-weight:600">${esc(u.name)} ${u.verified ? '<span class="tag ok">✓ 校园实名</span>' : '<span class="tag warn">未认证</span>'}</div><div class="muted small">${esc(u.college)} · ${esc(u.dorm)}</div></div></div>
+    <div class="card"><div class="profile">${avatar(u, 'lg')}<div class="grow"><div style="font-size:17px;font-weight:600">${esc(u.name)} ${u.verified ? `<span class="tag ok">${ic('shield-check', 's')}校园实名</span>` : '<span class="tag warn">未认证</span>'}</div><div class="muted small">${esc(u.college)} · ${esc(u.dorm)}</div></div></div>
       ${!u.verified ? `<button class="btn block mt12" data-act="verify">完成校园实名认证（信用 +20）</button>` : ''}
     </div>
     <div class="card"><div class="gauge">
@@ -719,7 +721,7 @@ function Me() {
         <div class="muted small">${next ? `再得 ${next.min - u.credit} 分升级为「${next.name}」` : '已达最高等级'}</div>
         <div class="row mt8" style="gap:16px;font-size:12px"><div><b style="font-size:16px">${runs}</b><br><span class="muted">完成跑腿</span></div><div><b style="font-size:16px">${posts}</b><br><span class="muted">发布任务</span></div><div><b style="font-size:16px">${good}</b><br><span class="muted">好评率</span></div></div>
       </div></div></div>
-    <div class="card"><h3>我的权益</h3><ul class="privs">${priv.map(([ok, x]) => `<li class="${ok ? '' : 'no'}">${ok ? '✅' : '🔒'} ${x}</li>`).join('')}</ul></div>
+    <div class="card"><h3>我的权益</h3><ul class="privs">${priv.map(([ok, x]) => `<li class="${ok ? '' : 'no'}">${ok ? ic('circle-check', 'ok') : ic('lock', 'off')}${x}</li>`).join('')}</ul></div>
     <div class="card"><div class="row between"><h3 style="margin:0">钱包</h3><button class="btn sm ghost" data-act="recharge">演示充值 ¥50</button></div>
       <div class="row mt8" style="gap:24px"><div><div style="font-size:22px;font-weight:700">¥${money(u.balance)}</div><div class="small muted">可用余额</div></div>
       <div><div style="font-size:22px;font-weight:700;color:var(--b600)">¥${money(S.tasks.filter(t => t.posterId === u.id && ['open', 'accepted', 'delivered'].includes(t.status)).reduce((s, t) => s + t.reward, 0))}</div><div class="small muted">托管中</div></div></div></div>
@@ -747,7 +749,7 @@ function Admin() {
   const users = Object.values(S.users);
   const rpCard = rp => {
     const t = task(rp.taskId), by = user(rp.by);
-    const btns = rp.status !== 'pending' ? `<div class="alert ok small" style="margin:8px 0 0">✔ ${esc(rp.result)}</div>` : rp.kind === '举报'
+    const btns = rp.status !== 'pending' ? `<div class="alert ok small" style="margin:8px 0 0">${ic('check', 's')}${esc(rp.result)}</div>` : rp.kind === '举报'
       ? `<div class="actions mt8"><button class="btn sm danger" data-act="resolve" data-id="${rp.id}" data-v="remove">核实，下架任务</button><button class="btn sm line" data-act="resolve" data-id="${rp.id}" data-v="reject">驳回</button></div>`
       : `<div class="actions mt8"><button class="btn sm" data-act="resolve" data-id="${rp.id}" data-v="poster">支持发布者（退款）</button><button class="btn sm line" data-act="resolve" data-id="${rp.id}" data-v="runner">支持跑腿者（放款）</button></div>`;
     return `<div class="card"><div class="row between"><span><span class="tag ${rp.kind === '举报' ? 'bad' : 'warn'}">${rp.kind}</span> <b>${esc(rp.reason)}</b></span><span class="small muted">${ago(rp.t)}</span></div>
@@ -765,11 +767,11 @@ function Admin() {
       ${kpi(acc ? Math.round(disputes / acc * 100) + '%' : '—', '纠纷率', '申诉 / 已接单')}${kpi(Math.round(users.reduce((s, u) => s + u.credit, 0) / users.length), '平均信用分')}
     </div>
     <h3 class="sec">待处理 <span class="tag bad">${pending.length}</span></h3>
-    ${pending.length ? pending.map(rpCard).join('') : '<div class="empty" style="padding:20px 0">🎉 没有待处理的举报和申诉</div>'}
+    ${pending.length ? pending.map(rpCard).join('') : `<div class="empty" style="padding:20px 0"><div class="e">${ic('circle-check')}</div>没有待处理的举报和申诉</div>`}
     ${resolved.length ? `<h3 class="sec">已处理</h3>${resolved.map(rpCard).join('')}` : ''}
     <h3 class="sec">用户信用</h3>
     <div class="card"><table class="rules"><tr><th>用户</th><th>认证</th><th>信用</th><th>完成单</th></tr>
-      ${users.map(u => `<tr><td>${esc(u.name)}</td><td>${u.verified ? '✓' : '—'}</td><td>${lvBadge(u.credit)}</td><td>${T.filter(t => t.runnerId === u.id && t.status === 'done').length}</td></tr>`).join('')}</table></div>
+      ${users.map(u => `<tr><td>${esc(u.name)}</td><td>${u.verified ? ic('check', 's') : '—'}</td><td>${lvBadge(u.credit)}</td><td>${T.filter(t => t.runnerId === u.id && t.status === 'done').length}</td></tr>`).join('')}</table></div>
     <h3 class="sec">违规词库（发布时自动拦截）</h3>
     <div class="card"><div class="row wrap" style="gap:6px">${BANNED.map(w => `<span class="tag bad">${w}</span>`).join('')}</div></div>`;
 }
@@ -777,13 +779,13 @@ function Admin() {
 /* ---------- 文档中心 ---------- */
 function Docs() {
   topbar('PRD · 操作手册');
-  const it = (h, ic, t, d) => `<a class="card doclink" href="#/${h}"><span class="dic">${ic}</span><div class="grow"><b>${t}</b><div class="small muted">${d}</div></div><span class="muted">›</span></a>`;
+  const it = (h, icn, t, d) => `<a class="card doclink" href="#/${h}"><span class="dic">${ic(icn)}</span><div class="grow"><b>${t}</b><div class="small muted">${d}</div></div><span class="muted">›</span></a>`;
   view.innerHTML = `
     <div class="hero"><div style="font-size:17px;font-weight:600">顺路帮 · 校园跑腿互助平台</div><div class="t mt8">面试作品说明：这个链接里同时包含可交互原型、产品需求文档和操作手册。建议先读 3 分钟的「操作手册 · 快速体验」，再看 PRD。</div></div>
-    ${it('guide', '🧭', '操作手册', '3 分钟体验路径、每个功能怎么用、常见问题')}
-    ${it('prd', '📘', '产品需求文档 PRD v1.0', '背景与问题、目标指标、用户、范围、功能需求、业务规则、状态机、风险')}
-    ${it('design', '📐', '产品设计一页纸', '痛点、设计原则、功能架构、核心流程')}
-    ${it('admin', '🛠', '运营后台', '数据看板、举报与申诉处理、用户信用、违规词库')}
+    ${it('guide', 'compass', '操作手册', '3 分钟体验路径、每个功能怎么用、常见问题')}
+    ${it('prd', 'book-open', '产品需求文档 PRD v1.0', '背景与问题、目标指标、用户、范围、功能需求、业务规则、状态机、风险')}
+    ${it('design', 'pen-tool', '产品设计一页纸', '痛点、设计原则、功能架构、核心流程')}
+    ${it('admin', 'shield-check', '运营后台', '数据看板、举报与申诉处理、用户信用、违规词库')}
     <div class="card"><h3>主题色</h3><p class="hint mb8">四套色卡来自小红书「校园美学配色」笔记，点一下整站换色</p>${themePicker()}</div>`;
 }
 
@@ -945,10 +947,10 @@ function PRD() {
 function Guide() {
   topbar('操作手册', '#/docs');
   view.innerHTML = `<div class="doc">
-  <div class="card"><h2>⏱ 3 分钟快速体验</h2>
+  <div class="card"><h2>${ic('clock', 'h')}3 分钟快速体验</h2>
     <p class="muted small mb8">按顺序点，就能走完“发单 → 接单 → 交付 → 评价 → 仲裁”的完整闭环。</p>
     <ol class="guide-steps">
-      <li><b>发一个任务</b>：底部点「＋ 发布」→ 选「代买物品」→ 填描述（试试输入“代签到”，会被拦截）→ 改送达地点，看建议赏金变化 → 发布。</li>
+      <li><b>发一个任务</b>：底部点「发布」→ 选「代买物品」→ 填描述（试试输入“代签到”，会被拦截）→ 改送达地点，看建议赏金变化 → 发布。</li>
       <li><b>换身份接单</b>：点右上角头像 → 在「切换演示身份」里选<b>陈同学</b> → 回大厅找到刚才的任务 → 接单。接单后能看到联系方式。</li>
       <li><b>更新进度</b>：点「已取件/已买到」，进度条前进；可以在订单消息里留言。</li>
       <li><b>拿交付码</b>：切回<b>林同学</b>，打开这个任务，能看到 4 位交付码。</li>
@@ -958,40 +960,40 @@ function Guide() {
     </ol>
     <a class="btn block mt12" href="#/post">从第 1 步开始 →</a></div>
 
-  <div class="card"><h2>👥 演示身份</h2><table class="rules"><tr><th>身份</th><th>特点</th><th>适合体验</th></tr>
+  <div class="card"><h2>${ic('users', 'h')}演示身份</h2><table class="rules"><tr><th>身份</th><th>特点</th><th>适合体验</th></tr>
     <tr><td>林同学</td><td>已认证，信用 128（可靠）</td><td>默认身份，发单与接单都能做</td></tr>
     <tr><td>陈同学</td><td>已认证，信用 156（优秀）</td><td>作为另一端接单、接大额垫付单</td></tr>
     <tr><td>王同学</td><td>未认证</td><td>看未认证时的限制，并完成实名认证（+20）</td></tr>
     <tr><td>赵同学</td><td>信用 58（受限）</td><td>看低信用不能接单的提示</td></tr></table></div>
 
-  <div class="card"><h2>📦 发布任务</h2><ul>
+  <div class="card"><h2>${ic('package', 'h')}发布任务</h2><ul>
     <li>先选类型，不同类型的字段不一样：快递要填取件码，代买要填垫付金额，占座只选一个地点。</li>
     <li>赏金默认用建议价，会随距离、大小、时间自动变化；用 −/＋ 手动改过后就不再自动变，可点「使用」恢复建议价。</li>
     <li>取件码和联系方式只有接单的人能看到，可以放心填。</li>
     <li>发布后赏金会从余额里冻结。余额不够时，到「信用中心」点「演示充值」。</li></ul></div>
 
-  <div class="card"><h2>🏃 接单与交付</h2><ul>
+  <div class="card"><h2>${ic('footprints', 'h')}接单与交付</h2><ul>
     <li>大厅顶部选「我正要去 …」开启顺路模式，只看顺路的单。</li>
     <li>接单有门槛：要实名认证、信用 ≥60；垫付超过 50 元的单要信用 ≥100；同时最多 3 单。</li>
     <li><b>当面交付</b>：向发布者要交付码，输入即完成，最稳妥。</li>
     <li><b>无接触交付</b>：放到约定位置并拍照，对方确认或 24 小时后自动完成。</li>
     <li>中途放弃会扣 3 分信用，任务会回到大厅。</li></ul></div>
 
-  <div class="card"><h2>📋 我的订单</h2><ul>
+  <div class="card"><h2>${ic('clipboard-list', 'h')}我的订单</h2><ul>
     <li>分「我接的单」和「我发布的」两栏，需要你处理的订单排在前面，并提示下一步做什么。</li>
     <li>发布方可以「催一下」（5 分钟一次）、「加价」、「取消」；过期或取消的任务可以「再来一单」一键重发。</li>
     <li>东西有问题时，在待确认状态点「有问题，申诉」，结算会暂停，交给运营处理。</li></ul></div>
 
-  <div class="card"><h2>⭐ 信用中心</h2><ul>
+  <div class="card"><h2>${ic('star', 'h')}信用中心</h2><ul>
     <li>查看信用分、等级、能享受的权益、每次加减分的原因。</li>
     <li>在这里切换演示身份、换主题色、充值、重置演示数据、进入运营后台。</li></ul></div>
 
-  <div class="card"><h2>🛠 运营后台</h2><ul>
+  <div class="card"><h2>${ic('shield-check', 'h')}运营后台</h2><ul>
     <li>上方看平台数据：任务总数、接单率、平均接单用时、履约率、纠纷率、平均信用。</li>
     <li>举报：「核实，下架任务」会下架并扣发布者 20 分；「驳回」不做处理。</li>
     <li>申诉：可展开进度记录判断；「支持发布者」退款并扣跑腿者 20 分，「支持跑腿者」放款并扣发布者 5 分。</li></ul></div>
 
-  <div class="card"><h2>❓ 常见问题</h2>
+  <div class="card"><h2>${ic('circle-help', 'h')}常见问题</h2>
     <p><b>数据存在哪？</b>只存在你自己的浏览器里，别人看不到；换浏览器或清缓存会回到初始数据。</p>
     <p class="mt8"><b>点乱了怎么办？</b>信用中心最下方「重置演示数据」。</p>
     <p class="mt8"><b>隔几天再打开，任务都过期了吗？</b>不会。演示数据的时间在你离开期间是暂停的，回来时任务的剩余时间和离开时一样。</p>

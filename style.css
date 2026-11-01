@@ -1,8 +1,8 @@
 /* 四套主题色取自小红书「校园美学配色」色卡：晴空球场 / 泳池水青 / 藏青校服 / 橘子汽水 */
-:root,:root[data-theme="sky"]{
+:root[data-theme="sky"]{
   --b900:#0F3666; --b800:#154C8D; --b700:#1A5FB0; --b600:#2A79CF; --b500:#3A92E6; --b300:#B9E0FF; --b100:#DDEFFF; --b50:#F0F9FF; --bg:#F3F8FD;
 }
-:root[data-theme="pool"]{
+:root,:root[data-theme="pool"]{
   --b900:#144D5C; --b800:#1F5A69; --b700:#2A6879; --b600:#357F91; --b500:#6FC0D1; --b300:#B9E4EC; --b100:#DCF1F5; --b50:#F0FAFC; --bg:#F2F8FA;
 }
 :root[data-theme="navy"]{

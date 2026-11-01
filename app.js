@@ -3,7 +3,7 @@
 'use strict';
 
 const LS_KEY = 'shunlu-errand-v2';
-const THEME_KEY = 'shunlu-theme';
+const THEME_KEY = 'shunlu-theme-v2';
 const MIN = 60e3, HOUR = 60 * MIN, DAY = 24 * HOUR;
 
 /* ---------- 基础配置 ---------- */
@@ -207,12 +207,12 @@ const ticon = type => `<span class="ticon">${TYPES[type].icon}</span>`;
 const statusTag = s => `<span class="tag ${STATUS[s].cls}">${STATUS[s].name}</span>`;
 
 function applyTheme(k) {
-  if (!THEMES[k]) k = 'sky';
+  if (!THEMES[k]) k = 'pool';
   document.documentElement.dataset.theme = k;
   try { localStorage.setItem(THEME_KEY, k); } catch (e) {}
 }
-let themeNow = 'sky';
-try { themeNow = localStorage.getItem(THEME_KEY) || 'sky'; } catch (e) {}
+let themeNow = 'pool';
+try { themeNow = localStorage.getItem(THEME_KEY) || 'pool'; } catch (e) {}
 applyTheme(themeNow);
 const themePicker = () => `<div class="themes">${Object.entries(THEMES).map(([k, v]) => `<button class="theme ${document.documentElement.dataset.theme === k ? 'on' : ''}" data-act="theme" data-v="${k}"><span class="sw">${v.sw.map(c => `<i style="background:${c}"></i>`).join('')}</span>${v.name}</button>`).join('')}</div>`;
 

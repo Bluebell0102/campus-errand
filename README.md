@@ -2,8 +2,14 @@
 
 在线访问：https://bluebell0102.github.io/campus-errand/
 
-校内实名、赏金托管、交付码核验、信用积累的校园跑腿互助平台。纯前端可交互原型，数据保存在浏览器本地。
+校内实名、赏金托管、交付码核验、信用积累的校园跑腿互助平台。纯前端可交互原型，数据保存在浏览器本地；手机版与电脑版两套布局，可在「我的 → 设置」中切换。
 
-- 操作手册：https://bluebell0102.github.io/campus-errand/#/guide
-- 产品需求文档 PRD：https://bluebell0102.github.io/campus-errand/#/prd
-- 运营后台：https://bluebell0102.github.io/campus-errand/#/admin
+## 文档
+
+- [产品需求文档 PRD](docs/PRD.md)
+- [操作手册](docs/操作手册.md)
+
+## 致谢
+
+- 图标：[Lucide](https://lucide.dev)（ISC 许可，Figma 社区有官方文件）
+- 配色：小红书笔记「校园美学配色｜适配校园主题设计的色卡」中的「泳池水青」等色卡

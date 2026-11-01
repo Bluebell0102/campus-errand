@@ -213,6 +213,16 @@ function applyTheme(k) {
   document.documentElement.dataset.theme = k;
   try { localStorage.setItem(THEME_KEY, k); } catch (e) {}
 }
+const LAYOUT_KEY = 'shunlu-layout';
+let layoutPref = 'auto';
+try { layoutPref = localStorage.getItem(LAYOUT_KEY) || 'auto'; } catch (e) {}
+// 版式：auto 按窗口宽度（≥1000px 用电脑版），也可在设置里固定为手机版或电脑版
+function applyLayout() {
+  const v = layoutPref === 'pc' || (layoutPref === 'auto' && innerWidth >= 1000) ? 'pc' : 'mobile';
+  if (document.documentElement.dataset.layout === v) return false;
+  document.documentElement.dataset.layout = v; return true;
+}
+applyLayout();
 let themeNow = 'pool';
 try { themeNow = localStorage.getItem(THEME_KEY) || 'pool'; } catch (e) {}
 applyTheme(themeNow);
@@ -220,10 +230,12 @@ const themePicker = () => `<div class="themes">${Object.entries(THEMES).map(([k,
 
 /* ---------- 路由 ---------- */
 const view = $('#view');
-const PAGES = { hall: Hall, task: Detail, post: Post, orders: Orders, me: Me, notices: Notices, docs: Docs, design: Design, prd: PRD, guide: Guide, admin: Admin };
+const PAGES = { hall: Hall, task: Detail, post: Post, orders: Orders, me: Me, notices: Notices, settings: Settings, docs: Settings, design: Design, prd: PRD, guide: Guide, admin: Admin };
+let curPage = 'hall';
 function route() {
   tick();
   const [, page = 'hall', arg] = location.hash.split('/');
+  curPage = PAGES[page] ? page : 'hall'; view.dataset.page = curPage;
   (PAGES[page] || Hall)(arg);
   renderTabbar(page);
   window.scrollTo(0, 0);
@@ -231,12 +243,16 @@ function route() {
   if (!S.onboarded && !$('#modal').innerHTML) onboarding();
 }
 window.addEventListener('hashchange', route);
+window.addEventListener('resize', () => { if (applyLayout()) route(); });
 const go = h => { if (location.hash === h) route(); else location.hash = h; };
 
 function topbar(title, back) {
   const u = me(), n = S.notices.filter(x => x.to === S.me && !x.read).length;
-  $('#topbar').innerHTML = `${back ? `<a class="back" href="${back}" aria-label="返回">‹</a>` : ''}<h1>${title}</h1>
-    <a class="bell" href="#/notices" aria-label="消息">${ic('bell')}${n ? `<span class="badge">${n}</span>` : ''}</a>
+  const t = todoCount(), active = { task: 'hall', settings: 'me', admin: 'me', prd: 'me', guide: 'me', design: 'me', docs: 'me' }[curPage] || curPage;
+  const nav = [['hall', 'house', '任务大厅'], ['post', 'plus', '发布任务'], ['orders', 'clipboard-list', '我的订单', t], ['notices', 'bell', '消息', n], ['me', 'user', '个人中心']];
+  $('#topbar').innerHTML = `<a class="brandmark" href="#/hall"><span class="logo">顺</span><b>顺路帮</b></a>
+    ${back ? `<a class="back" href="${back}" aria-label="返回">‹</a>` : ''}<h1>${title}</h1>
+    <nav class="topnav">${nav.map(([h, icn, name, c]) => `<a href="#/${h}" class="${active === h ? 'on' : ''}">${ic(icn, 's')}${name}${c ? `<span class="badge">${c}</span>` : ''}</a>`).join('')}</nav>
     <span class="chip-credit" data-act="switchUser" title="切换演示身份">${avatar(u)}${esc(u.name)} · ${lvBadge(u.credit)}</span>`;
 }
 function todoCount() {
@@ -244,19 +260,19 @@ function todoCount() {
     || (t.status === 'done' && ((t.posterId === S.me && !t.reviews.poster) || (t.runnerId === S.me && !t.reviews.runner)))).length;
 }
 function renderTabbar(page) {
-  const n = todoCount();
-  const docPages = ['docs', 'design', 'prd', 'guide', 'admin'];
-  const it = (h, icn, name, key, cls = '') => `<a href="#/${h}" class="${cls} ${page === key || (key === 'docs' && docPages.includes(page)) ? 'on' : ''}"><span class="ic">${ic(icn)}</span>${name}${key === 'orders' && n ? `<span class="badge">${n}</span>` : ''}</a>`;
-  $('#tabbar').innerHTML = it('hall', 'house', '任务大厅', 'hall') + it('docs', 'file-text', 'PRD·手册', 'docs') + it('post', 'plus', '发布', 'post', 'post') + it('orders', 'clipboard-list', '我的订单', 'orders') + it('me', 'user', '信用中心', 'me');
+  const n = todoCount(), unread = S.notices.filter(x => x.to === S.me && !x.read).length;
+  const mePages = ['me', 'settings', 'docs', 'design', 'prd', 'guide', 'admin'];
+  const it = (h, icn, name, key, c = 0, cls = '') => `<a href="#/${h}" class="${cls} ${page === key || (key === 'me' && mePages.includes(page)) ? 'on' : ''}"><span class="ic">${ic(icn)}</span>${name}${c ? `<span class="badge">${c}</span>` : ''}</a>`;
+  $('#tabbar').innerHTML = it('hall', 'house', '大厅', 'hall') + it('notices', 'message-circle', '消息', 'notices', unread) + it('post', 'plus', '发布', 'post', 0, 'post') + it('orders', 'clipboard-list', '订单', 'orders', n) + it('me', 'user', '我的', 'me');
 }
 function onboarding() {
   openModal(`<h3>${ic('sparkles', 'h')}欢迎来到顺路帮</h3>
     <p class="muted mb8">这是「校园跑腿互助平台」的可交互原型，数据只保存在你的浏览器里，可以随便点。</p>
     <ol class="ob"><li><b>以「林同学」身份进入</b>：在大厅接单、发布任务、看订单。</li>
     <li><b>右上角头像可切换身份</b>：换成陈同学体验另一端；王同学未认证、赵同学信用低，可看到限制。</li>
-    <li><b>「PRD·手册」页</b>：产品需求文档、操作手册、运营后台都在这里。</li></ol>
+    <li><b>「我的 → 设置」</b>：主题色、手机版 / 电脑版、运营后台，以及操作手册和 PRD。</li></ol>
     <div class="field mt12"><label>选个喜欢的主题色 <em>色卡来自小红书「校园美学配色」</em></label>${themePicker()}</div>
-    <div class="actions mt12"><button class="btn line" data-act="obDocs">先看 PRD</button><button class="btn" data-act="obStart">开始体验</button></div>`);
+    <div class="actions mt12"><button class="btn line" data-act="obDocs">看操作手册</button><button class="btn" data-act="obStart">开始体验</button></div>`);
 }
 
 /* ---------- 任务大厅 ---------- */
@@ -296,7 +312,7 @@ function Hall() {
   };
   list.sort(sorters[hall.sort]);
   const board = weeklyBoard();
-  view.innerHTML = `
+  view.innerHTML = `<div class="hall-grid"><aside class="hall-side">
     <div class="hero">
       <div class="t">${esc(u.name)}，${esc(u.dorm)} 附近有 <b>${open.filter(t => dist(u.dorm, t.from) < 600).length}</b> 个任务等你顺手带</div>
       <div class="stats">
@@ -308,7 +324,8 @@ function Hall() {
         <select data-change="via" aria-label="顺路目的地"><option value="">— 选个地方，看顺路单 —</option>${PLACE_NAMES.map(p => `<option ${hall.via === p ? 'selected' : ''}>${p}</option>`).join('')}</select>
       </div>
     </div>
-    <a class="docbar" href="#/docs">${ic('file-text')} 面试官请看：产品需求文档 PRD · 操作手册 · 运营后台 <span>${ic('arrow-right')}</span></a>
+    ${board.length ? `<div class="card board"><h3>${ic('trophy', 'h')}本周跑腿榜</h3>${board.map((x, i) => `<div class="row mb8"><b style="width:18px">${i + 1}</b>${avatar(x.u)}<span class="grow">${esc(x.u.name)}</span>${lvBadge(x.u.credit)}<span class="muted small">完成 ${x.n} 单</span></div>`).join('')}</div>` : ''}
+    </aside><section class="hall-main">
     <div class="chips">
       ${[['all', '全部'], ...Object.entries(TYPES).map(([k, v]) => [k, ic(v.icon, 's') + v.name])].map(([k, n]) => `<button class="chip ${hall.type === k ? 'on' : ''}" data-act="hallType" data-v="${k}">${n}</button>`).join('')}
     </div>
@@ -320,7 +337,7 @@ function Hall() {
     </div>
     ${hall.via ? `<div class="alert info">顺路模式：从 ${esc(u.dorm)} 去 <b>${esc(hall.via)}</b>，为你筛出 ${list.length} 个顺路单 <a href="javascript:" data-act="clearVia">退出</a></div>` : ''}
     <div id="list">${list.length ? list.map(taskCard).join('') : `<div class="empty"><div class="e">${ic('inbox')}</div>暂时没有符合条件的任务<br><a href="#/post">发布一个需求 →</a></div>`}</div>
-    ${board.length ? `<div class="card"><h3>${ic('trophy', 'h')}本周跑腿榜</h3>${board.map((x, i) => `<div class="row mb8"><b style="width:18px">${i + 1}</b>${avatar(x.u)}<span class="grow">${esc(x.u.name)}</span>${lvBadge(x.u.credit)}<span class="muted small">完成 ${x.n} 单</span></div>`).join('')}</div>` : ''}`;
+    </section></div>`;
 }
 function taskCard(t) {
   const p = user(t.posterId), ty = TYPES[t.type];
@@ -447,7 +464,7 @@ function finish(t, how) {
   notify(p.id, `${short(t)} 已完成，去评价一下跑腿的同学吧`, t.id);
 }
 const actions = {
-  switchUser() { go('#/me'); setTimeout(() => document.getElementById('who')?.scrollIntoView({ behavior: 'smooth' }), 60); },
+  switchUser() { go('#/settings'); setTimeout(() => document.getElementById('who')?.scrollIntoView({ behavior: 'smooth' }), 60); },
   hallType(d) { hall.type = d.v; Hall(); },
   clearVia() { hall.via = ''; Hall(); },
   accept(d) {
@@ -566,13 +583,17 @@ const actions = {
   rstep(d) { postDraft.autoReward = false; postDraft.reward = Math.max(1, Math.min(99, postDraft.reward + +d.v)); Post(); },
   useSuggest() { postDraft.autoReward = true; postDraft.reward = suggest(postDraft); Post(); },
   ordersTab(d) { ordersTab = d.v; Orders(); },
+  layout(d) {
+    layoutPref = d.v; try { localStorage.setItem(LAYOUT_KEY, d.v); } catch (e) {}
+    applyLayout(); toast('已切换为' + { auto: '自动', mobile: '手机版', pc: '电脑版' }[d.v] + '版式'); route();
+  },
   theme(d) {
     applyTheme(d.v);
     document.querySelectorAll('.theme').forEach(b => b.classList.toggle('on', b.dataset.v === d.v));
     toast('主题已切换为「' + THEMES[d.v].name + '」');
   },
   obStart() { S.onboarded = true; save(); closeModal(); },
-  obDocs() { S.onboarded = true; save(); closeModal(); go('#/prd'); },
+  obDocs() { S.onboarded = true; save(); closeModal(); go('#/guide'); },
   readAll() { S.notices.forEach(n => { if (n.to === S.me) n.read = true; }); save(); route(); },
   openNotice(d) { const n = S.notices.find(x => x.id === d.id); if (n) n.read = true; save(); go('#/task/' + d.task); },
   resolve(d) {
@@ -685,16 +706,16 @@ function hint(t) {
 
 /* ---------- 消息中心 ---------- */
 function Notices() {
-  topbar('消息通知', 'javascript:history.back()');
+  topbar('消息');
   const list = S.notices.filter(n => n.to === S.me);
   view.innerHTML = `${list.some(n => !n.read) ? `<div class="row between mb8"><span class="muted small">${list.filter(n => !n.read).length} 条未读</span><a href="javascript:" data-act="readAll" class="small">全部已读</a></div>` : ''}
     ${list.length ? `<div class="card" style="padding:4px 14px">${list.map(n => `<div class="notice ${n.read ? '' : 'unread'}" data-act="openNotice" data-id="${n.id}" data-task="${n.taskId}"><div>${esc(n.x)}</div><div class="small muted">${ago(n.t)}</div></div>`).join('')}</div>`
       : `<div class="empty"><div class="e">${ic('inbox')}</div>暂无消息</div>`}`;
 }
 
-/* ---------- 信用中心 ---------- */
+/* ---------- 个人中心 ---------- */
 function Me() {
-  topbar('信用中心');
+  topbar('个人中心');
   const u = me(), l = level(u.credit);
   const pct = u.credit / 200, C = Math.PI * 46;
   const runs = S.tasks.filter(t => t.runnerId === u.id && t.status === 'done').length;
@@ -713,6 +734,7 @@ function Me() {
     <div class="card"><div class="profile">${avatar(u, 'lg')}<div class="grow"><div style="font-size:17px;font-weight:600">${esc(u.name)} ${u.verified ? `<span class="tag ok">${ic('shield-check', 's')}校园实名</span>` : '<span class="tag warn">未认证</span>'}</div><div class="muted small">${esc(u.college)} · ${esc(u.dorm)}</div></div></div>
       ${!u.verified ? `<button class="btn block mt12" data-act="verify">完成校园实名认证（信用 +20）</button>` : ''}
     </div>
+    <a class="card rowlink" href="#/settings">${ic('settings', 'h')}<span class="grow">设置</span><span class="muted small">主题色 · 版式 · 身份 · 关于</span>${ic('chevron-right', 's')}</a>
     <div class="card"><div class="gauge">
       <svg width="120" height="70" viewBox="0 0 120 70" role="img" aria-label="信用分 ${u.credit}"><path d="M14 64 A46 46 0 0 1 106 64" fill="none" style="stroke:var(--line)" stroke-width="10" stroke-linecap="round"/>
         <path d="M14 64 A46 46 0 0 1 106 64" fill="none" style="stroke:${l.c}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C * pct} ${C}"/>
@@ -730,17 +752,12 @@ function Me() {
       <tr><td>收到 4–5 星评价</td><td class="plus">+1</td></tr><tr><td>超时完成</td><td class="minus">-2</td></tr><tr><td>接单后放弃</td><td class="minus">-3</td></tr>
       <tr><td>收到 1–2 星评价</td><td class="minus">-3</td></tr><tr><td>无理申诉</td><td class="minus">-5</td></tr><tr><td>申诉核实违约 / 发布违规任务</td><td class="minus">-20</td></tr></table>
       <p class="hint">信用分 0–200，初始 100。等级：受限 &lt;60 · 新手 60 · 可靠 100 · 优秀 140 · 金牌 180。</p></div>
-    <div class="card"><h3>信用明细</h3><ul class="log">${u.log.slice(0, 12).map(x => `<li><span>${esc(x.r)}<br><span class="small muted">${ago(x.t)}</span></span><span class="${x.d >= 0 ? 'plus' : 'minus'}">${x.d > 0 ? '+' : ''}${x.d}</span></li>`).join('') || '<li class="muted">暂无记录</li>'}</ul></div>
-    <div class="card"><h3>主题色</h3><p class="hint mb8">色卡来自小红书笔记「校园美学配色｜适配校园主题设计的色卡」</p>${themePicker()}</div>
-    <div class="card" id="who"><h3>切换演示身份</h3><p class="hint mb8">用不同身份体验发单方 / 跑腿方，以及低信用、未认证时的限制。</p>
-      ${Object.values(S.users).map(x => `<div class="who ${x.id === S.me ? 'on' : ''}" data-act="becomeUser" data-id="${x.id}" role="button">${avatar(x)}<div class="grow"><b>${esc(x.name)}</b> ${x.verified ? '' : '<span class="tag warn">未认证</span>'}<div class="small muted">${esc(x.college)} · ${esc(x.dorm)}</div></div>${lvBadge(x.credit)}</div>`).join('')}
-      <a class="btn ghost block mt8" href="#/admin">进入运营后台（管理员视角）</a>
-      <button class="btn line block mt8" data-act="reset">重置演示数据</button></div>`;
+    <div class="card"><h3>信用明细</h3><ul class="log">${u.log.slice(0, 12).map(x => `<li><span>${esc(x.r)}<br><span class="small muted">${ago(x.t)}</span></span><span class="${x.d >= 0 ? 'plus' : 'minus'}">${x.d > 0 ? '+' : ''}${x.d}</span></li>`).join('') || '<li class="muted">暂无记录</li>'}</ul></div>`;
 }
 
 /* ---------- 运营后台 ---------- */
 function Admin() {
-  topbar('运营后台', '#/docs');
+  topbar('运营后台', '#/settings');
   const T = S.tasks, done = T.filter(t => t.status === 'done').length, acc = T.filter(t => t.acceptedAt).length;
   const finished = T.filter(t => ['done', 'cancelled', 'expired', 'removed'].includes(t.status) || t.status === 'delivered').length;
   const disputes = S.reports.filter(r => r.kind === '申诉').length;
@@ -777,20 +794,35 @@ function Admin() {
 }
 
 /* ---------- 文档中心 ---------- */
-function Docs() {
-  topbar('PRD · 操作手册');
-  const it = (h, icn, t, d) => `<a class="card doclink" href="#/${h}"><span class="dic">${ic(icn)}</span><div class="grow"><b>${t}</b><div class="small muted">${d}</div></div><span class="muted">›</span></a>`;
+function Settings() {
+  topbar('设置', '#/me');
+  const it = (h, icn, t, d, ext) => `<a class="rowlink" href="${h}" ${ext ? 'target="_blank" rel="noopener"' : ''}>${ic(icn, 'h')}<div class="grow"><div>${t}</div>${d ? `<div class="small muted">${d}</div>` : ''}</div>${ic('chevron-right', 's')}</a>`;
+  const seg = [['auto', '自动', '按窗口宽度'], ['mobile', '手机版', '底部标签栏'], ['pc', '电脑版', '顶部导航 · 多栏']];
+  const GH = 'https://github.com/Bluebell0102/campus-errand/blob/main/docs/';
   view.innerHTML = `
-    <div class="hero"><div style="font-size:17px;font-weight:600">顺路帮 · 校园跑腿互助平台</div><div class="t mt8">面试作品说明：这个链接里同时包含可交互原型、产品需求文档和操作手册。建议先读 3 分钟的「操作手册 · 快速体验」，再看 PRD。</div></div>
-    ${it('guide', 'compass', '操作手册', '3 分钟体验路径、每个功能怎么用、常见问题')}
-    ${it('prd', 'book-open', '产品需求文档 PRD v1.0', '背景与问题、目标指标、用户、范围、功能需求、业务规则、状态机、风险')}
-    ${it('design', 'pen-tool', '产品设计一页纸', '痛点、设计原则、功能架构、核心流程')}
-    ${it('admin', 'shield-check', '运营后台', '数据看板、举报与申诉处理、用户信用、违规词库')}
-    <div class="card"><h3>主题色</h3><p class="hint mb8">四套色卡来自小红书「校园美学配色」笔记，点一下整站换色</p>${themePicker()}</div>`;
+    <h3 class="sec">外观</h3>
+    <div class="card"><div class="field" style="margin:0"><label>页面版式 <em>当前：${document.documentElement.dataset.layout === 'pc' ? '电脑版' : '手机版'}</em></label>
+      <div class="seg">${seg.map(([k, n, d]) => `<button class="${layoutPref === k ? 'on' : ''}" data-act="layout" data-v="${k}"><b>${n}</b><small>${d}</small></button>`).join('')}</div></div></div>
+    <div class="card"><div class="field" style="margin:0"><label>主题色 <em>色卡来自小红书「校园美学配色」</em></label>${themePicker()}</div></div>
+    <h3 class="sec">演示身份</h3>
+    <div class="card" id="who"><p class="hint mb8">用不同身份体验发单方 / 跑腿方，以及低信用、未认证时的限制。</p>
+      ${Object.values(S.users).map(x => `<div class="who ${x.id === S.me ? 'on' : ''}" data-act="becomeUser" data-id="${x.id}" role="button">${avatar(x)}<div class="grow"><b>${esc(x.name)}</b> ${x.verified ? '' : '<span class="tag warn">未认证</span>'}<div class="small muted">${esc(x.college)} · ${esc(x.dorm)}</div></div>${lvBadge(x.credit)}</div>`).join('')}
+      <button class="btn line block mt8" data-act="reset">重置演示数据</button></div>
+    <h3 class="sec">管理</h3>
+    <div class="card list">${it('#/admin', 'shield-check', '运营后台', '数据看板、举报与申诉处理、用户信用')}</div>
+    <h3 class="sec">关于顺路帮</h3>
+    <div class="card list">
+      ${it('#/guide', 'compass', '操作手册', '3 分钟体验路径与功能说明')}
+      ${it('#/prd', 'book-open', '产品需求文档 PRD v1.0', '背景、目标、范围、规则、状态机、风险')}
+      ${it('#/design', 'pen-tool', '产品设计一页纸', '痛点、原则、架构、流程')}
+      ${it(GH + 'PRD.md', 'github', 'GitHub 文档：PRD.md', '仓库里的 Markdown 版本', true)}
+      ${it(GH + '%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C.md', 'github', 'GitHub 文档：操作手册.md', '仓库里的 Markdown 版本', true)}
+    </div>
+    <p class="center small muted" style="margin:16px 0">顺路帮 v1.0 · 图标 Lucide · 配色 小红书「校园美学配色」</p>`;
 }
 
 function Design() {
-  topbar('产品设计一页纸', '#/docs');
+  topbar('产品设计一页纸', '#/settings');
   view.innerHTML = `<div class="doc">
   <div class="card"><h2>一句话定位</h2><p>只在本校同学之间流通的跑腿互助平台：<b>发单有人接、跑腿有钱拿、做得好有信用</b>。核心不是“撮合”，而是把陌生同学之间的<b>信任</b>做成可计算、可积累的东西。</p></div>
   <div class="card"><h2>1. 用户与痛点</h2><div class="pain">
@@ -819,10 +851,10 @@ function Design() {
 }
 
 function PRD() {
-  topbar('PRD v1.0', '#/docs');
+  topbar('PRD v1.0', '#/settings');
   view.innerHTML = `<div class="doc prd">
   <div class="card"><h2>顺路帮 · 校园跑腿互助平台 产品需求文档</h2>
-    <table class="rules"><tr><td>版本</td><td>v1.0（MVP）</td></tr><tr><td>状态</td><td>原型已上线，待校内试点验证</td></tr><tr><td>形态</td><td>移动端 H5（后续微信小程序）</td></tr><tr><td>范围</td><td>单所高校、单校区</td></tr></table>
+    <table class="rules"><tr><td>版本</td><td>v1.0（MVP）</td></tr><tr><td>状态</td><td>原型已上线，待校内试点验证</td></tr><tr><td>形态</td><td>H5，手机版与电脑版两套布局（后续微信小程序）</td></tr><tr><td>范围</td><td>单所高校、单校区</td></tr></table>
     <p class="mt8"><b>目录</b>：1 背景与问题 · 2 目标与指标 · 3 用户与场景 · 4 范围 · 5 功能需求 · 6 业务规则 · 7 订单状态机 · 8 非功能需求 · 9 风险与对策 · 10 里程碑</p></div>
 
   <div class="card"><h2>1. 背景与问题</h2>
@@ -888,7 +920,7 @@ function PRD() {
     <li>完成时结算：跑腿方收到赏金 + 垫付款，发布方支付垫付款。</li></ul>
     <h4>5.5 评价与信用</h4><ul>
     <li>双方互评 1–5 星 + 标签 + 文字。双盲：双方都提交后或完成 72 小时后才公开，避免报复性评价。</li>
-    <li>信用变化见第 6 节；信用中心展示分数、等级、权益、明细。</li></ul>
+    <li>信用变化见第 6 节；个人中心展示信用分、等级、权益、明细。</li></ul>
     <h4>5.6 举报、申诉与运营后台</h4><ul>
     <li>任何人可举报待接单任务；发布方可对待确认订单发起申诉，申诉期间暂停自动确认与结算。</li>
     <li>运营后台：数据看板（任务数、接单率、平均接单用时、履约率、纠纷率、平均信用）、待处理队列、用户信用表、违规词库。</li>
@@ -924,6 +956,7 @@ function PRD() {
     <li><b>隐私</b>：取件码、手机号仅接单双方可见，手机号走虚拟号；实名信息不对外展示。</li>
     <li><b>合规</b>：违规词库可由运营维护；占座任务限 1 个座位、30 分钟内到场。</li>
     <li><b>资金</b>：正式版接入持牌支付机构的担保交易，平台不直接持有资金。</li>
+    <li><b>多端适配</b>：手机版用底部标签栏、单栏卡片；电脑版用顶部导航、任务双列 + 侧栏；默认按窗口宽度自动切换，用户可在设置中固定。</li>
     <li><b>性能</b>：大厅首屏 1 秒内可交互；弱网下操作可重试，不重复扣款。</li>
     <li><b>可追溯</b>：每个订单保留进度记录与站内消息，作为申诉依据。</li></ul></div>
 
@@ -945,18 +978,18 @@ function PRD() {
 }
 
 function Guide() {
-  topbar('操作手册', '#/docs');
+  topbar('操作手册', '#/settings');
   view.innerHTML = `<div class="doc">
   <div class="card"><h2>${ic('clock', 'h')}3 分钟快速体验</h2>
     <p class="muted small mb8">按顺序点，就能走完“发单 → 接单 → 交付 → 评价 → 仲裁”的完整闭环。</p>
     <ol class="guide-steps">
       <li><b>发一个任务</b>：底部点「发布」→ 选「代买物品」→ 填描述（试试输入“代签到”，会被拦截）→ 改送达地点，看建议赏金变化 → 发布。</li>
-      <li><b>换身份接单</b>：点右上角头像 → 在「切换演示身份」里选<b>陈同学</b> → 回大厅找到刚才的任务 → 接单。接单后能看到联系方式。</li>
+      <li><b>换身份接单</b>：点右上角头像（或「我的 → 设置」）→ 在「演示身份」里选<b>陈同学</b> → 回大厅找到刚才的任务 → 接单。接单后能看到联系方式。</li>
       <li><b>更新进度</b>：点「已取件/已买到」，进度条前进；可以在订单消息里留言。</li>
       <li><b>拿交付码</b>：切回<b>林同学</b>，打开这个任务，能看到 4 位交付码。</li>
       <li><b>完成交付</b>：再切到<b>陈同学</b>，点「当面交付」输入交付码 → 订单完成，赏金和垫付款到账，信用 +2。</li>
       <li><b>互相评价</b>：两边各评价一次。只有一方评价时，对方看不到内容（双盲）。</li>
-      <li><b>处理纠纷</b>：「PRD·手册」→「运营后台」，处理预置的一条举报和一条申诉，看信用和资金怎么变。</li>
+      <li><b>处理纠纷</b>：「我的 → 设置 → 运营后台」，处理预置的一条举报和一条申诉，看信用和资金怎么变。</li>
     </ol>
     <a class="btn block mt12" href="#/post">从第 1 步开始 →</a></div>
 
@@ -970,7 +1003,7 @@ function Guide() {
     <li>先选类型，不同类型的字段不一样：快递要填取件码，代买要填垫付金额，占座只选一个地点。</li>
     <li>赏金默认用建议价，会随距离、大小、时间自动变化；用 −/＋ 手动改过后就不再自动变，可点「使用」恢复建议价。</li>
     <li>取件码和联系方式只有接单的人能看到，可以放心填。</li>
-    <li>发布后赏金会从余额里冻结。余额不够时，到「信用中心」点「演示充值」。</li></ul></div>
+    <li>发布后赏金会从余额里冻结。余额不够时，到「我的」点「演示充值」。</li></ul></div>
 
   <div class="card"><h2>${ic('footprints', 'h')}接单与交付</h2><ul>
     <li>大厅顶部选「我正要去 …」开启顺路模式，只看顺路的单。</li>
@@ -984,9 +1017,9 @@ function Guide() {
     <li>发布方可以「催一下」（5 分钟一次）、「加价」、「取消」；过期或取消的任务可以「再来一单」一键重发。</li>
     <li>东西有问题时，在待确认状态点「有问题，申诉」，结算会暂停，交给运营处理。</li></ul></div>
 
-  <div class="card"><h2>${ic('star', 'h')}信用中心</h2><ul>
+  <div class="card"><h2>${ic('user', 'h')}个人中心与设置</h2><ul>
     <li>查看信用分、等级、能享受的权益、每次加减分的原因。</li>
-    <li>在这里切换演示身份、换主题色、充值、重置演示数据、进入运营后台。</li></ul></div>
+    <li>「设置」里可以切换手机版 / 电脑版、换主题色、切换演示身份、重置演示数据、进入运营后台，也能找到操作手册和 PRD。</li></ul></div>
 
   <div class="card"><h2>${ic('shield-check', 'h')}运营后台</h2><ul>
     <li>上方看平台数据：任务总数、接单率、平均接单用时、履约率、纠纷率、平均信用。</li>
@@ -995,7 +1028,7 @@ function Guide() {
 
   <div class="card"><h2>${ic('circle-help', 'h')}常见问题</h2>
     <p><b>数据存在哪？</b>只存在你自己的浏览器里，别人看不到；换浏览器或清缓存会回到初始数据。</p>
-    <p class="mt8"><b>点乱了怎么办？</b>信用中心最下方「重置演示数据」。</p>
+    <p class="mt8"><b>点乱了怎么办？</b>「我的 → 设置 → 演示身份」下方的「重置演示数据」。</p>
     <p class="mt8"><b>隔几天再打开，任务都过期了吗？</b>不会。演示数据的时间在你离开期间是暂停的，回来时任务的剩余时间和离开时一样。</p>
     <p class="mt8"><b>钱是真的吗？</b>不是，钱包和支付都是模拟的，用来演示托管和结算流程。</p></div>
   </div>`;
@@ -1079,7 +1112,7 @@ document.addEventListener('submit', e => {
     const w = bannedHit(d.title + d.note);
     if (w) return toast(`含违规内容「${w}」，无法发布`);
     if (d.type !== 'seat' && d.from === d.to) return toast('取件地点和送达地点不能相同');
-    if (u.balance < d.reward) return toast('余额不足以托管赏金，请先到信用中心充值');
+    if (u.balance < d.reward) return toast('余额不足以托管赏金，请先到「我的」充值');
     u.balance -= d.reward;
     const nt = {
       id: uid(), type: d.type, title: d.title.trim(), from: d.from, to: d.type === 'seat' ? d.from : d.to, reward: d.reward, advance: d.type === 'buy' ? d.advance : 0,

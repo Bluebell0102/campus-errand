@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>顺路帮 · 校园跑腿互助平台</title>
+<meta name="description" content="校内实名、赏金托管、交付码核验、信用积累的校园跑腿互助平台">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%232563EB'/><path d='M18 40l10-18 8 12 4-6 6 12' stroke='white' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="intro">
+    <div class="brand"><span class="logo">顺</span><div><b>顺路帮</b><small>校园跑腿互助平台</small></div></div>
+    <p class="lead">让同学之间的“举手之劳”变得<b>可信、可结算、可积累</b>。</p>
+    <ul class="pillars">
+      <li><b>校内实名</b>学号 + 校园邮箱认证，只在本校流通</li>
+      <li><b>赏金托管</b>发布即冻结，交付后才放款</li>
+      <li><b>交付码核验</b>当面报码即完成，杜绝冒领</li>
+      <li><b>信用分</b>履约、评价、违约都记账，决定接单权限</li>
+      <li><b>顺路匹配</b>输入要去的地方，捎带手接单</li>
+    </ul>
+    <a class="btn ghost block" href="#/design">查看产品设计说明 →</a>
+    <p class="tip">这是可交互演示：数据保存在你的浏览器里。到「我的」可切换演示身份，体验发单方与跑腿方两端。</p>
+  </aside>
+  <div class="app">
+    <header class="topbar" id="topbar"></header>
+    <main id="view"></main>
+    <nav class="tabbar" id="tabbar"></nav>
+  </div>
+</div>
+<div id="modal" class="modal" hidden></div>
+<div id="toast" class="toast" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>
